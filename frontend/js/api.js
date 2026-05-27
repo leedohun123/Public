@@ -1,42 +1,50 @@
 /**
- * API 통신 모듈 (PRD 5.2 API 인터페이스)
- * USE_MOCK = true 시 Mock 데이터 반환 (Phase 2-B2 개발 전략)
- * Phase 3 통합 시 false로 전환
+ * API 통신 모듈
+ * 백엔드 서버 없이 브라우저에서 직접 계산 (engine.js + data.js 사용)
+ * 서버 연동이 필요하면 USE_LOCAL_ENGINE = false 로 변경
  */
 
-// Railway 배포 주소 — 배포 후 실제 URL로 교체하세요
-const API_BASE = (window.API_BASE_URL || 'RAILWAY_URL_PLACEHOLDER') + '/api';
-const USE_MOCK = false; // 실제 백엔드 연동
-
-// ── Mock 데이터 ─────────────────────────────────────────────────────────
-
-const MOCK_CALCULATE_RESPONSE = {
-  job_series: "사무직",
-  results: [
-    { company_id: 1, company_name: "한국전력공사", my_bonus_score: 20.0, max_bonus_score: 20, match_rate: 100.0, feedback: null },
-    { company_id: 3, company_name: "국민건강보험공단", my_bonus_score: 16.0, max_bonus_score: 20, match_rate: 80.0, feedback: "'공인회계사(CPA)(1급)' 취득 시 +5.0점 추가 가능 (부족: 4.0점)" },
-    { company_id: 4, company_name: "근로복지공단", my_bonus_score: 13.0, max_bonus_score: 15, match_rate: 86.7, feedback: "'공인노무사(1급)' 취득 시 +2.0점 추가 가능 (부족: 2.0점)" },
-    { company_id: 5, company_name: "LH한국토지주택공사", my_bonus_score: 14.3, max_bonus_score: 20, match_rate: 71.5, feedback: "토익 990점 달성 시 어학 가산점 +0.7점 추가 가능 (부족: 5.7점)" },
-    { company_id: 8, company_name: "국민연금공단", my_bonus_score: 14.3, max_bonus_score: 20, match_rate: 71.5, feedback: "'공인회계사(CPA)(1급)' 취득 시 +5.0점 추가 가능 (부족: 5.7점)" },
-  ]
-};
-
-const MOCK_COMPANIES = [
-  { id: 1, name: "한국전력공사", series_type: "공통", max_bonus_score: 20, is_active: true },
-  { id: 2, name: "한국철도공사(KORAIL)", series_type: "공통", max_bonus_score: 20, is_active: true },
-  { id: 3, name: "국민건강보험공단", series_type: "사무직", max_bonus_score: 20, is_active: true },
-];
+const USE_LOCAL_ENGINE = true;  // true = 로컬 JS 엔진 사용 (서버 불필요)
+const API_BASE = 'http://localhost:8000/api';  // USE_LOCAL_ENGINE=false 시에만 사용
 
 // ── API 함수 ────────────────────────────────────────────────────────────
 
 /**
  * POST /api/calculate — 가산점 계산 요청
+ * USE_LOCAL_ENGINE=true 시 JS 엔진으로 직접 계산
  */
 async function calculateBonusScore(specData) {
-  if (USE_MOCK) {
-    await delay(800); // 로딩 UX 시뮬레이션
-    return MOCK_CALCULATE_RESPONSE;
+  if (USE_LOCAL_ENGINE) {
+    // 브라우저에서 직접 계산 (서버 필요 없음)
+    await delay(300); // UX 로딩 시뮬레이션
+
+    const certs = (specData.certificates || []).map(c => ({ name: c.name, grade: c.grade }));
+    const lang = {
+      toeic: specData.language_scores?.toeic || null,
+      toeicSpeaking: specData.language_scores?.toeic_speaking || null,
+      opic: specData.language_scores?.opic || null,
+    };
+
+    const engineResults = Engine.runEngine(specData.job_series, certs, lang);
+
+    if (engineResults.length === 0) {
+      throw new ApiError(404, '해당 직렬에 등록된 공기업 데이터가 없습니다.');
+    }
+
+    return {
+      job_series: specData.job_series,
+      results: engineResults.map(r => ({
+        company_id: r.companyId,
+        company_name: r.companyName,
+        my_bonus_score: r.myBonusScore,
+        max_bonus_score: r.maxBonusScore,
+        match_rate: r.matchRate,
+        feedback: r.feedback,
+      })),
+    };
   }
+
+  // 서버 연동 모드 (USE_LOCAL_ENGINE=false 시)
   const response = await fetch(`${API_BASE}/calculate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -53,9 +61,18 @@ async function calculateBonusScore(specData) {
  * GET /api/companies — 공기업 목록 조회
  */
 async function getCompanies(series = null) {
-  if (USE_MOCK) {
-    await delay(300);
-    return MOCK_COMPANIES;
+  if (USE_LOCAL_ENGINE) {
+    await delay(200);
+    const list = COMPANIES_DATA.filter(c =>
+      c.isActive && (!series || c.seriesType === "공통" || c.seriesType === series)
+    );
+    return list.map(c => ({
+      id: c.id,
+      name: c.name,
+      series_type: c.seriesType,
+      max_bonus_score: c.maxBonusScore,
+      is_active: c.isActive,
+    }));
   }
   const url = new URL(`${API_BASE}/companies`);
   if (series) url.searchParams.set('series', series);
@@ -65,17 +82,28 @@ async function getCompanies(series = null) {
 }
 
 /**
- * GET /api/companies/{id}/rules — 특정 공기업 가산점 룰 조회
+ * GET /api/companies/{id}/rules
  */
 async function getCompanyRules(companyId) {
-  if (USE_MOCK) { await delay(200); return []; }
+  if (USE_LOCAL_ENGINE) {
+    await delay(100);
+    return BONUS_RULES_DATA
+      .filter(r => r.companyId === companyId)
+      .map(r => ({
+        id: r.id, company_id: r.companyId,
+        category: r.category, certificate_name: r.certificateName,
+        grade: r.grade, score: r.score,
+        calc_type: r.calcType, base_score: r.baseScore,
+        series_filter: r.seriesFilter,
+      }));
+  }
   const response = await fetch(`${API_BASE}/companies/${companyId}/rules`);
   if (!response.ok) throw new ApiError(response.status, '가산점 룰 조회 실패');
   return response.json();
 }
 
 /**
- * POST /api/admin/token — 관리자 로그인 (JWT 발급)
+ * 관리자 API — 서버 연동 시에만 동작 (로컬 엔진 모드에서는 미지원)
  */
 async function adminLogin(username, password) {
   const formData = new URLSearchParams();
@@ -93,9 +121,6 @@ async function adminLogin(username, password) {
   return response.json();
 }
 
-/**
- * PUT /api/admin/companies/{id} — 관리자: 공기업 정보 수정
- */
 async function adminUpdateCompany(companyId, updateData, token) {
   const response = await fetch(`${API_BASE}/admin/companies/${companyId}`, {
     method: 'PUT',
@@ -112,9 +137,6 @@ async function adminUpdateCompany(companyId, updateData, token) {
   return response.json();
 }
 
-/**
- * POST /api/admin/sync — 관리자: 외부 API 동기화
- */
 async function adminSync(token) {
   const response = await fetch(`${API_BASE}/admin/sync`, {
     method: 'POST',
@@ -127,9 +149,6 @@ async function adminSync(token) {
   return response.json();
 }
 
-/**
- * GET /api/admin/companies — 관리자: 전체 공기업 목록
- */
 async function adminGetCompanies(token) {
   const response = await fetch(`${API_BASE}/admin/companies`, {
     headers: { 'Authorization': `Bearer ${token}` },
@@ -141,9 +160,6 @@ async function adminGetCompanies(token) {
   return response.json();
 }
 
-/**
- * GET /api/admin/logs — 관리자: 변경 이력 조회
- */
 async function adminGetLogs(token) {
   const response = await fetch(`${API_BASE}/admin/logs`, {
     headers: { 'Authorization': `Bearer ${token}` },
