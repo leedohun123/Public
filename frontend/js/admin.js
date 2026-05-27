@@ -205,18 +205,7 @@ async function onSaveCompany(e) {
       await API.adminUpdateCompany(parseInt(companyId), payload, adminToken);
       showToast('공기업 정보가 수정되었습니다.', 'success');
     } else {
-      const response = await fetch(`http://localhost:8000/api/admin/companies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.detail || '등록 실패');
-      }
+      await API.adminAddCompany(payload, adminToken);
       showToast('공기업이 신규 등록되었습니다.', 'success');
     }
     closeModal();
