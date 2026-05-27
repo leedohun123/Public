@@ -4,7 +4,8 @@
  * Phase 3 통합 시 false로 전환
  */
 
-const API_BASE = 'http://localhost:8000/api';
+// Railway 배포 주소 — 배포 후 실제 URL로 교체하세요
+const API_BASE = (window.API_BASE_URL || 'RAILWAY_URL_PLACEHOLDER') + '/api';
 const USE_MOCK = false; // 실제 백엔드 연동
 
 // ── Mock 데이터 ─────────────────────────────────────────────────────────

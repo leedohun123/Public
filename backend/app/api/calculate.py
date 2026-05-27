@@ -1,105 +1,39 @@
-"""POST /api/calculate - 가산점 계산 API (PRD REQ-001~005)"""
-from typing import Optional
+"""POST /api/calculate — 가산점 계산 엔드포인트 (PRD REQ-004, SRS UC-004)"""
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.engine.rule_engine import CertInput, LanguageScores, run_engine
-from app.services.bonus_service import get_companies_with_rules
+from app.models.models import Company, BonusRule
+from app.engine.rule_engine import (
+    CertInput, LanguageScores, BonusRuleItem,
+    CompanyRuleSet, run_engine
+)
 
 router = APIRouter()
 
-# ── Pydantic 스키마 ───────────────────────────────────────────────────────
 
-VALID_JOB_SERIES = [
-    # ── 일반직 ──
-    "행정", "사무", "기술",
-    # ── 전력·에너지 기술직 ──
-    "전기", "기계", "화학", "전기통신",
-    # ── IT ──
-    "IT", "ICT",
-    # ── 건설 ──
-    "토목", "건축", "건설",
-    # ── 철도 특수직 ──
-    "사무영업·열차승무", "운전", "차량",
-    # ── 하위 호환 ──
-    "사무직", "기술직",
-]
+# ── Pydantic 요청/응답 스키마 ─────────────────────────────────────────────
 
-VALID_OPIC = ["NL", "IL", "IM1", "IM2", "IM3", "IH", "AL"]
-VALID_TOEIC_SPEAKING = ["Lv.1", "Lv.2", "Lv.3", "Lv.4", "Lv.5", "Lv.6", "Lv.7", "Lv.8"]
-
-
-class CertificateInput(BaseModel):
+class CertInputSchema(BaseModel):
     name: str
     grade: str
 
-    @field_validator("name", "grade")
-    @classmethod
-    def not_empty(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("자격증 이름과 급수는 필수 항목입니다.")
-        return v.strip()
 
-
-class LanguageScoreInput(BaseModel):
+class LanguageScoresSchema(BaseModel):
     toeic: Optional[int] = None
     toeic_speaking: Optional[str] = None
     opic: Optional[str] = None
 
-    @field_validator("toeic")
-    @classmethod
-    def validate_toeic(cls, v):
-        if v is not None and not (0 <= v <= 990):
-            raise ValueError("toeic 점수는 0~990 범위여야 합니다.")
-        return v
-
-    @field_validator("toeic_speaking")
-    @classmethod
-    def validate_toeic_speaking(cls, v):
-        if v is not None and v not in VALID_TOEIC_SPEAKING:
-            raise ValueError(f"토익스피킹 등급은 {VALID_TOEIC_SPEAKING} 중 하나여야 합니다.")
-        return v
-
-    @field_validator("opic")
-    @classmethod
-    def validate_opic(cls, v):
-        if v is not None and v not in VALID_OPIC:
-            raise ValueError(f"OPIc 등급은 {VALID_OPIC} 중 하나여야 합니다.")
-        return v
-
 
 class CalculateRequest(BaseModel):
-    job_series: str
-    certificates: list[CertificateInput] = []
-    language_scores: Optional[LanguageScoreInput] = None
-
-    @field_validator("job_series")
-    @classmethod
-    def validate_job_series(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("job_series는 필수 항목입니다.")
-        if v.strip() not in VALID_JOB_SERIES:
-            raise ValueError(f"job_series는 {VALID_JOB_SERIES} 중 하나여야 합니다.")
-        return v.strip()
-
-    @model_validator(mode="after")
-    def check_at_least_one_spec(self) -> "CalculateRequest":
-        has_cert = bool(self.certificates)
-        has_lang = (
-            self.language_scores is not None and (
-                self.language_scores.toeic is not None or
-                self.language_scores.toeic_speaking is not None or
-                self.language_scores.opic is not None
-            )
-        )
-        if not has_cert and not has_lang:
-            raise ValueError("자격증 또는 어학 성적 중 최소 1개 이상 입력해야 합니다.")
-        return self
+    job_series: str                              # "사무직" | "기술직"
+    certificates: List[CertInputSchema] = []
+    language_scores: LanguageScoresSchema = LanguageScoresSchema()
 
 
-class MatchResultItem(BaseModel):
+class CompanyResultItem(BaseModel):
     company_id: int
     company_name: str
     my_bonus_score: float
@@ -110,49 +44,77 @@ class MatchResultItem(BaseModel):
 
 class CalculateResponse(BaseModel):
     job_series: str
-    results: list[MatchResultItem]
+    results: List[CompanyResultItem]
 
 
 # ── 엔드포인트 ────────────────────────────────────────────────────────────
 
-@router.post("/calculate", response_model=CalculateResponse, summary="공기업 가산점 계산")
+@router.post("/calculate", response_model=CalculateResponse, summary="가산점 계산 요청")
 async def calculate_bonus_score(
     request: CalculateRequest,
     db: Session = Depends(get_db),
 ):
     """
-    사용자 스펙(자격증·어학·직렬)을 입력받아 전체 공기업 가산점 및 매칭률을 계산합니다.
-
-    - OR 룰: 동일 계열 자격증 중 최고 등급 1개만 반영
-    - 어학 비례 연산: (유저점수 / 만점기준) × 배점
-    - 합산 한도(Cap): 기업별 최대 가산점 초과분 절삭
-    - 결과: 매칭률 내림차순 정렬
+    사용자의 직렬·자격증·어학성적을 기반으로
+    전체 공기업별 가산점 및 매칭률을 계산하여 반환합니다.
     """
-    # DB에서 직렬 필터링된 공기업 + 룰 조회
-    companies = get_companies_with_rules(db, request.job_series)
-
-    if not companies:
-        raise HTTPException(
-            status_code=404,
-            detail="현재 등록된 공기업 데이터가 없습니다."
+    # 1. 해당 직렬 활성 기업 조회
+    companies = (
+        db.query(Company)
+        .filter(
+            Company.is_active == True,
+            Company.series_type.in_(["공통", request.job_series])
         )
-
-    # 엔진용 입력 데이터 변환
-    cert_inputs = [
-        CertInput(name=c.name, grade=c.grade)
-        for c in request.certificates
-    ]
-    lang_scores = LanguageScores(
-        toeic=request.language_scores.toeic if request.language_scores else None,
-        toeic_speaking=request.language_scores.toeic_speaking if request.language_scores else None,
-        opic=request.language_scores.opic if request.language_scores else None,
+        .all()
     )
 
-    # 룰 엔진 실행 (개별 기업 오류 시 스킵 — SRS 6.3)
-    engine_results = run_engine(companies, cert_inputs, lang_scores)
+    if not companies:
+        raise HTTPException(status_code=404, detail="해당 직렬에 등록된 공기업 데이터가 없습니다.")
 
+    # 2. 기업별 룰셋 구성
+    company_rule_sets: List[CompanyRuleSet] = []
+    for company in companies:
+        rules_db = (
+            db.query(BonusRule)
+            .filter(BonusRule.company_id == company.id)
+            .all()
+        )
+        rules = [
+            BonusRuleItem(
+                id=r.id,
+                company_id=r.company_id,
+                category=r.category,
+                certificate_name=r.certificate_name,
+                grade=r.grade,
+                score=r.score,
+                calc_type=r.calc_type,
+                base_score=r.base_score,
+                series_filter=r.series_filter,
+            )
+            for r in rules_db
+            if r.series_filter in ("공통", request.job_series)
+        ]
+        company_rule_sets.append(
+            CompanyRuleSet(
+                company_id=company.id,
+                company_name=company.name,
+                max_bonus_score=company.max_bonus_score,
+                rules=rules,
+            )
+        )
+
+    # 3. 룰 엔진 실행
+    certs = [CertInput(name=c.name, grade=c.grade) for c in request.certificates]
+    lang = LanguageScores(
+        toeic=request.language_scores.toeic,
+        toeic_speaking=request.language_scores.toeic_speaking,
+        opic=request.language_scores.opic,
+    )
+    engine_results = run_engine(company_rule_sets, certs, lang)
+
+    # 4. 응답 변환
     results = [
-        MatchResultItem(
+        CompanyResultItem(
             company_id=r.company_id,
             company_name=r.company_name,
             my_bonus_score=r.my_bonus_score,
