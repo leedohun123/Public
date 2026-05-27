@@ -1,0 +1,55 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\leedh\\OneDrive\\바탕 화면\\workspace\\project\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [27384] using WatchFiles
+2026-05-27 10:54:30,483 [INFO] watchfiles.main: 2 changes detected
+2026-05-27 10:54:30,955 [INFO] watchfiles.main: 8 changes detected
+2026-05-27 10:54:31,520 [INFO] watchfiles.main: 8 changes detected
+2026-05-27 10:54:31,979 [INFO] watchfiles.main: 7 changes detected
+2026-05-27 10:54:32,446 [INFO] watchfiles.main: 7 changes detected
+2026-05-27 10:54:32,957 [INFO] watchfiles.main: 8 changes detected
+2026-05-27 10:54:33,520 [INFO] watchfiles.main: 9 changes detected
+2026-05-27 10:54:34,027 [INFO] watchfiles.main: 8 changes detected
+INFO:     Started server process [19792]
+INFO:     Waiting for application startup.
+2026-05-27 10:54:34,109 [INFO] main: \U0001f680 공기업 가산점 매칭 시스템 시작
+2026-05-27 10:54:34,121 [INFO] main: \u2705 DB 테이블 생성 완료
+2026-05-27 10:54:34,135 [WARNING] main: 시드 데이터 삽입 중 오류 (무시): 'cp949' codec can't encode character '\u2705' in position 0: illegal multibyte sequence
+INFO:     Application startup complete.
+2026-05-27 10:54:34,635 [INFO] watchfiles.main: 9 changes detected
+2026-05-27 10:54:35,045 [INFO] watchfiles.main: 4 changes detected
+2026-05-27 10:54:35,449 [INFO] watchfiles.main: 5 changes detected
+2026-05-27 10:54:35,904 [INFO] watchfiles.main: 7 changes detected
+WARNING:  WatchFiles detected changes in 'venv\Lib\site-packages\rich\_unicode_data\__init__.py', 'venv\Lib\site-packages\rich\_unicode_data\_versions.py', 'venv\Lib\site-packages\rich\_unicode_data\unicode8-0-0.py', 'venv\Lib\site-packages\rich\_unicode_data\unicode6-2-0.py', 'venv\Lib\site-packages\rich\_unicode_data\unicode6-3-0.py', 'venv\Lib\site-packages\rich\_unicode_data\unicode7-0-0.py', 'venv\Lib\site-packages\rich\_unicode_data\unicode9-0-0.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-05-27 10:55:28,671 [INFO] main: \U0001f6d1 서버 종료
+INFO:     Application shutdown complete.
+INFO:     Finished server process [19792]
+Process SpawnProcess-1:
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\process.py", line 314, in _bootstrap
+    self.run()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\leedh\OneDrive\바탕 화면\workspace\project\backend\venv\Lib\site-packages\uvicorn\_subprocess.py", line 78, in subprocess_started
+    target(sockets=sockets)
+  File "C:\Users\leedh\OneDrive\바탕 화면\workspace\project\backend\venv\Lib\site-packages\uvicorn\server.py", line 65, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.12_3.12.2800.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 123, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt

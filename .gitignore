@@ -1,0 +1,34 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# DB
+*.db
+*.sqlite3
+
+# 환경변수 (보안)
+.env
+
+# 로그
+*.log
+server.log
+server_err.log
+
+# Node
+node_modules/
+package-lock.json
+
+# 스크린샷 임시 파일
+*.png
+screenshot_*.js
+check_*.js
+
+# OS
+.DS_Store
+Thumbs.db

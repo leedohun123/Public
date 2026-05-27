@@ -1,0 +1,77 @@
+{
+  "job_series": "사무직",
+  "results": [
+    {
+      "company_id": 1,
+      "company_name": "한국전력공사",
+      "my_bonus_score": 20.0,
+      "max_bonus_score": 20,
+      "match_rate": 100.0,
+      "feedback": null
+    },
+    {
+      "company_id": 3,
+      "company_name": "국민건강보험공단",
+      "my_bonus_score": 16.0,
+      "max_bonus_score": 20,
+      "match_rate": 80.0,
+      "feedback": "'공인회계사(CPA)(1급)' 취득 시 +5.0점 추가 가능 (부족: 4.0점)"
+    },
+    {
+      "company_id": 5,
+      "company_name": "LH한국토지주택공사",
+      "my_bonus_score": 14.3,
+      "max_bonus_score": 20,
+      "match_rate": 71.5,
+      "feedback": "토익 990점 달성 시 어학 가산점 +0.7점 추가 가능 (부족: 5.7점)"
+    },
+    {
+      "company_id": 8,
+      "company_name": "국민연금공단",
+      "my_bonus_score": 14.3,
+      "max_bonus_score": 20,
+      "match_rate": 71.5,
+      "feedback": "'공인회계사(CPA)(1급)' 취득 시 +5.0점 추가 가능 (부족: 5.7점)"
+    },
+    {
+      "company_id": 2,
+      "company_name": "한국철도공사(KORAIL)",
+      "my_bonus_score": 14.3,
+      "max_bonus_score": 20,
+      "match_rate": 71.5,
+      "feedback": "'경영지도사(1급)' 취득 시 +5.0점 추가 가능 (부족: 5.7점)"
+    },
+    {
+      "company_id": 7,
+      "company_name": "한국도로공사",
+      "my_bonus_score": 14.3,
+      "max_bonus_score": 20,
+      "match_rate": 71.5,
+      "feedback": "'경영지도사(1급)' 취득 시 +5.0점 추가 가능 (부족: 5.7점)"
+    },
+    {
+      "company_id": 4,
+      "company_name": "근로복지공단",
+      "my_bonus_score": 14.0,
+      "max_bonus_score": 15,
+      "match_rate": 93.3,
+      "feedback": "'공인노무사(1급)' 취득 시 +1.0점 추가 가능 (부족: 1.0점)"
+    },
+    {
+      "company_id": 9,
+      "company_name": "한국산업인력공단",
+      "my_bonus_score": 13.3,
+      "max_bonus_score": 15,
+      "match_rate": 88.7,
+      "feedback": "'경영지도사(1급)' 취득 시 +1.7점 추가 가능 (부족: 1.7점)"
+    },
+    {
+      "company_id": 6,
+      "company_name": "한국수자원공사",
+      "my_bonus_score": 13.3,
+      "max_bonus_score": 18,
+      "match_rate": 73.9,
+      "feedback": "'공인회계사(CPA)(1급)' 취득 시 +4.0점 추가 가능 (부족: 4.7점)"
+    }
+  ]
+}

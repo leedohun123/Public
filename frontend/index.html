@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공기업 가산점 매칭 시스템</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ── 헤더 ─────────────────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="container">
+    <h1><span>🏢</span> 공기업 가산점 자동 계산 &amp; 매칭 시스템</h1>
+    <nav class="header-nav">
+      <a href="admin.html">관리자 페이지</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Toast 컨테이너 ─────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── 메인 컨테이너 ──────────────────────────────────────────────── -->
+<main class="container">
+
+  <!-- ════ 입력 섹션 ════════════════════════════════════════════════ -->
+  <div id="input-section">
+
+    <!-- STEP 1: 직렬 선택 (UC-001) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-badge">STEP 1</span>
+        <h2>직렬 선택 <span style="color:var(--danger);font-size:0.85rem;">*필수</span></h2>
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:12px;">
+          지원하려는 직렬을 선택하세요. 직렬에 맞는 가산점 규칙이 자동으로 적용됩니다.
+        </p>
+        <div class="series-select-wrap">
+          <select id="series-select" class="series-select">
+            <option value="">-- 직렬을 선택하세요 --</option>
+            <optgroup label="📁 일반직">
+              <option value="행정">행정직 (경영·회계·행정)</option>
+              <option value="사무">사무직</option>
+              <option value="기술">기술직 (일반)</option>
+            </optgroup>
+            <optgroup label="⚡ 전력·에너지 기술직">
+              <option value="전기">전기직</option>
+              <option value="기계">기계직</option>
+              <option value="화학">화학직</option>
+              <option value="전기통신">전기통신직</option>
+            </optgroup>
+            <optgroup label="💻 IT 직군">
+              <option value="IT">IT직 (정보처리·소프트웨어)</option>
+              <option value="ICT">ICT직 (정보통신)</option>
+            </optgroup>
+            <optgroup label="🏗️ 건설·토목·건축">
+              <option value="토목">토목직</option>
+              <option value="건축">건축직</option>
+            </optgroup>
+            <optgroup label="🚂 철도 특수직 (한국철도공사 전용)">
+              <option value="사무영업·열차승무">사무영업·열차승무</option>
+              <option value="운전">운전직</option>
+              <option value="차량">차량직</option>
+            </optgroup>
+          </select>
+        </div>
+        <div id="series-error" class="error-msg" style="display:none;margin-top:10px;"></div>
+      </div>
+    </div>
+
+    <!-- STEP 2: 자격증 입력 (UC-002) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-badge">STEP 2</span>
+        <h2>자격증 입력 <span style="color:var(--gray-400);font-size:0.8rem;font-weight:400;">(복수 선택 가능)</span></h2>
+      </div>
+      <div class="card-body">
+        <div class="cert-table">
+          <div class="cert-header">
+            <span>자격증 종류</span>
+            <span>급수</span>
+            <span></span>
+          </div>
+          <div id="cert-table-body"></div>
+        </div>
+        <button class="btn-add-cert mt-12" id="btn-add-cert">
+          <span>＋</span> 자격증 추가
+        </button>
+        <p class="text-xs text-gray-500 mt-8">
+          💡 동일 계열 자격증을 여러 개 입력해도 가장 높은 등급 1개만 반영됩니다 (OR 룰).
+        </p>
+      </div>
+    </div>
+
+    <!-- STEP 3: 어학 성적 입력 (UC-003) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-badge">STEP 3</span>
+        <h2>어학 성적 입력 <span style="color:var(--gray-400);font-size:0.8rem;font-weight:400;">(선택)</span></h2>
+      </div>
+      <div class="card-body">
+        <div class="lang-grid">
+          <div class="lang-item">
+            <label for="toeic">토익 (TOEIC)</label>
+            <input type="number" id="toeic" placeholder="점수 입력 (0~990)" min="0" max="990" />
+            <div class="hint">0점 이상 990점 이하</div>
+            <div id="toeic-error" class="error-msg" style="display:none;"></div>
+          </div>
+          <div class="lang-item">
+            <label for="toeic-speaking">토익스피킹</label>
+            <select id="toeic-speaking">
+              <option value="">등급 선택</option>
+              <option>Lv.1</option>
+              <option>Lv.2</option>
+              <option>Lv.3</option>
+              <option>Lv.4</option>
+              <option>Lv.5</option>
+              <option>Lv.6</option>
+              <option>Lv.7</option>
+              <option>Lv.8</option>
+            </select>
+            <div class="hint">Lv.1(최하) ~ Lv.8(최상)</div>
+          </div>
+          <div class="lang-item">
+            <label for="opic">OPIc</label>
+            <select id="opic">
+              <option value="">등급 선택</option>
+              <option>NL</option>
+              <option>IL</option>
+              <option>IM1</option>
+              <option>IM2</option>
+              <option>IM3</option>
+              <option>IH</option>
+              <option>AL</option>
+            </select>
+            <div class="hint">NL(최하) ~ AL(최상)</div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-8">
+          💡 미입력 시 해당 어학 항목의 가산점은 0점으로 처리됩니다.
+          동일 어학 카테고리 중 가장 유리한 점수 1개만 반영됩니다.
+        </p>
+      </div>
+    </div>
+
+    <!-- 계산하기 버튼 -->
+    <button class="btn-calculate" id="btn-calculate">
+      🔍 가산점 계산하기
+    </button>
+
+  </div><!-- / input-section -->
+
+  <!-- ════ 결과 섹션 ════════════════════════════════════════════════ -->
+  <div id="result-section" style="display:none;">
+
+    <!-- 결과 헤더 -->
+    <div class="result-header">
+      <div>
+        <h2 id="result-title">📊 나의 공기업 가산점 매칭 결과</h2>
+        <div id="result-subtitle" class="subtitle"></div>
+      </div>
+      <button class="btn-back" id="btn-back">← 스펙 수정하기</button>
+    </div>
+
+    <!-- 요약 카드 -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="s-label">조회 기업 수</div>
+        <div class="s-value" id="summary-total">-</div>
+        <div class="s-sub">개 기업</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">만점 기업</div>
+        <div class="s-value" id="summary-perfect">-</div>
+        <div class="s-sub">개 (100%)</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">평균 매칭률</div>
+        <div class="s-value" id="summary-avg">-</div>
+        <div class="s-sub">전체 기준</div>
+      </div>
+    </div>
+
+    <!-- 결과 테이블 -->
+    <div class="card">
+      <div class="result-table-wrapper">
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th style="width:44px;text-align:center;">#</th>
+              <th>공기업명</th>
+              <th style="white-space:nowrap;">내 가산점 / 최대</th>
+              <th style="min-width:140px;">매칭률</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody id="result-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 안내 -->
+    <div class="card" style="background:var(--primary-light);border:1.5px solid var(--primary)20;">
+      <div class="card-body" style="padding:16px 20px;">
+        <p class="text-sm" style="color:var(--primary);font-weight:600;">
+          📌 매칭률 100% 기업은 현재 스펙으로 최고 가산점을 달성할 수 있습니다.
+          피드백 버튼을 클릭하면 부족한 항목별 맞춤 개선 방향을 확인할 수 있습니다.
+        </p>
+        <p class="text-sm text-gray-500 mt-8">
+          ※ 본 결과는 입력 스펙 기준 자동 계산값으로 실제 공기업 채용 공고를 반드시 확인하세요.
+          가산점 정책은 공기업별·채용 시기별로 변동될 수 있습니다.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- / result-section -->
+
+</main><!-- / container -->
+
+<script src="js/api.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
